@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CBT - D'Ajiks Academy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .no-scroll-panel {
+            max-height: calc(100vh - 220px);
+            overflow-y: auto;
+        }
+        @media (max-width: 768px) {
+            .no-scroll-panel {
+                max-height: none;
+                overflow-y: visible;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen flex flex-col justify-between">
+
+    <div id="login-page" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-2xl p-6 md:p-8 max-w-md w-full border-t-8 border-blue-400">
+            <div class="text-center mb-6">
+                <h1 class="text-2xl font-bold text-gray-800">D'Ajiks Academy</h1>
+                <p class="text-sm text-gray-500 mt-1">Asesmen Nasional Berbasis Komputer (Simulasi)</p>
+            </div>
+            <form id="login-form" onsubmit="mulaiUjian(event)">
+                <div class="mb-5">
+                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="username">Nama Peserta</label>
+                    <input type="text" id="username" required autocomplete="off"
+                        class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-700" 
+                        placeholder="Masukkan nama lengkap Anda...">
+                </div>
+                <button type="submit" 
+                    class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 px-4 rounded-lg transition duration-200 shadow-md">
+                    Mulai Ujian
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="exam-page" class="hidden flex flex-col min-h-screen">
+        
+        <header class="bg-blue-400 text-white shadow-md p-4 sticky top-0 z-40">
+            <div class="container mx-auto flex flex-col md:flex-row justify-between items-center gap-2">
+                <div class="flex items-center gap-3">
+                    <div class="bg-white text-blue-500 font-black px-3 py-1 rounded text-xl shadow-sm">ANBK</div>
+                    <div>
+                        <h2 class="font-bold text-lg leading-tight">D'Ajiks Academy</h2>
+                        <p class="text-xs text-blue-100">Peserta: <span id="display-nama" class="font-semibold text-white">...</span></p>
+                    </div>
+                </div>
+                <div class="bg-blue-500 bg-opacity-40 px-4 py-2 rounded-lg border border-blue-300 flex items-center gap-2">
+                    <span class="text-xs font-medium uppercase tracking-wider text-blue-100">Sisa Waktu:</span>
+                    <span id="timer" class="font-mono text-xl font-bold">20:00</span>
+                </div>
+            </div>
+        </header>
+
+        <main id="cbt-content" class="container mx-auto flex-1 p-4 flex flex-col md:flex-row gap-4">
+            
+            <div class="w-full md:w-3/4 flex flex-col justify-between bg-white rounded-lg shadow-sm border border-gray-200 p-5 min-h-[450px]">
+                <div>
+                    <div class="flex justify-between items-center border-b pb-3 mb-4">
+                        <span class="bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm font-bold">
+                            Soal Nomor <span id="nomor-aktif">1</span>
+                        </span>
+                        <span class="text-sm text-gray-400">Pilihan Ganda</span>
+                    </div>
+                    
+                    <div id="teks-soal" class="text-gray-800 text-base md:text-lg mb-6 leading-relaxed whitespace-pre-line">
+                        Loading soal...
+                    </div>
+
+                    <div id="area-opsi" class="space-y-3">
+                        </div>
+                </div>
+
+                <div class="flex justify-between items-center border-t pt-4 mt-6 gap-2">
+                    <button id="btn-prev" onclick="soalSebelumnya()"
+                        class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded shadow transition text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed">
+                        &larr; Soal Sebelumnya
+                    </button>
+                    
+                    <button id="btn-ragu" onclick="tandaiRagu()"
+                        class="px-5 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold rounded shadow transition text-sm sm:text-base">
+                        Ragu-ragu
+                    </button>
+                    
+                    <button id="btn-next" onclick="soalBerikutnya()"
+                        class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded shadow transition text-sm sm:text-base">
+                        Soal Berikutnya &rarr;
+                    </button>
+                </div>
+            </div>
+
+            <div class="w-full md:w-1/4 bg-white rounded-lg shadow-sm border border-gray-200 p-4 sticky md:top-[90px] h-fit">
+                <h3 class="font-bold text-gray-700 border-b pb-2 mb-3 text-center md:text-left">Nomor Soal</h3>
+                
+                <div id="grid-nomor" class="no-scroll-panel grid grid-cols-5 gap-2 justify-items-center">
+                    </div>
+
+                <div class="mt-4 pt-3 border-t text-xs text-gray-500 flex flex-wrap justify-center md:justify-start gap-3">
+                    <div class="flex items-center gap-1"><span class="w-3 h-3 bg-green-500 inline-block rounded"></span> Dijawab</div>
+                    <div class="flex items-center gap-1"><span class="w-3 h-3 bg-yellow-400 inline-block rounded"></span> Ragu</div>
+                    <div class="flex items-center gap-1"><span class="w-3 h-3 bg-gray-200 inline-block rounded"></span> Belum</div>
+                </div>
+            </div>
+        </main>
+
+        <main id="result-page" class="hidden container mx-auto p-4 space-y-6 animate-fade-in">
+            <div class="bg-white border rounded-lg shadow-md p-6 text-center max-w-xl mx-auto border-t-8 border-green-500">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Hasil Ujian Selesai!</h2>
+                <p class="text-gray-600 mb-4">Terima kasih telah menyelesaikan simulasi ujian di D'Ajiks Academy.</p>
+                <div class="inline-block bg-gray-50 border px-8 py-4 rounded-xl mb-4">
+                    <div class="text-sm text-gray-500 uppercase tracking-wider font-semibold">Skor Akhir</div>
+                    <div id="skor-akhir" class="text-5xl font-black text-green-600">0</div>
+                </div>
+                <div class="grid grid-cols-3 gap-2 max-w-sm mx-auto text-sm">
+                    <div class="bg-green-50 text-green-700 p-2 rounded font-medium">Benar: <span id="stat-benar">0</span></div>
+                    <div class="bg-red-50 text-red-700 p-2 rounded font-medium">Salah: <span id="stat-salah">0</span></div>
+                    <div class="bg-gray-50 text-gray-700 p-2 rounded font-medium">Kosong: <span id="stat-kosong">0</span></div>
+                </div>
+            </div>
+
+            <div class="bg-white border rounded-lg shadow-md p-6">
+                <h3 class="text-xl font-bold text-gray-800 border-b pb-3 mb-4">Koreksi Jawaban & Pembahasan</h3>
+                <div id="lembar-pembahasan" class="space-y-6 divider-y">
+                    </div>
+            </div>
+        </main>
+
+        <footer class="bg-gray-800 text-gray-400 text-center py-4 text-xs border-t border-gray-700 mt-auto">
+            &copy; 2026 D'Ajiks Academy. All Rights Reserved.
+        </footer>
+    </div>
+
+    <script>
+        const bankSoal = [
+            {
+                id: 1,
+                soal: "Ketika menjabat sebagai Presiden, Soekarno dikenal karena menolak berbagai bentuk korupsi dan kolusi, meskipun dihadapkan pada banyak godaan. Bagaimana tindakan Soekarno ini mencerminkan integritasnya sebagai seorang pemimpin?",
+                opsi: {
+                    A: "Dengan menghindari konflik kepentingan dan memastikan keputusan dibuat berdasarkan keadilan dan kesetaraan.",
+                    B: "Dengan menjaga transparansi dalam setiap keputusan, menunjukkan keadilan dan komitmen.",
+                    C: "Dengan menolak segala bentuk korupsi dan kolusi, menunjukkan kejujuran dan tanggung jawab.",
+                    D: "Dengan menolak menggunakan jabatannya untuk keuntungan pribadi, menunjukkan kesederhanaan dan integritas pribadi.",
+                    E: "Dengan memprioritaskan kepentingan bangsa di atas kepentingan pribadi dan golongan, menunjukkan rasa tanggung jawab dan kepedulian terhadap kesejahteraan rakyat."
+                },
+                kunci: "C",
+                pembahasan: "Tindakan menolak korupsi dan kolusi secara tegas adalah perwujudan utama dari nilai kejujuran dan tanggung jawab moral seorang pemimpin terhadap amanah publik.",
+                jawabanTerpilih: null,
+                ragu: false
+            },
+            {
+                id: 2,
+                soal: "Sebuah perusahaan asing berminat untuk berinvestasi di sebuah desa dan menawarkan sejumlah uang kepada kepala desa sebagai bentuk kompensasi untuk mempercepat proses perizinan. Namun, masyarakat desa tidak setuju dengan rencana investasi tersebut karena khawatir akan dampaknya terhadap lingkungan dan budaya lokal. Apa yang sebaiknya dilakukan oleh kepala desa dalam situasi ini? (TWK CPNS 2024)",
+                opsi: {
+                    A: "Menyampaikan aspirasi masyarakat kepada perusahaan secara transparansi",
+                    B: "Menolak uang kompensasi dan menyampaikan aspirasi masyarakat desa kepada perusahaan",
+                    C: "Mencari jalan tengah dengan menawarkan sebagian keuntungan kepada masyarakat agar mau menerima investasi",
+                    D: "Mengadakan musyawarah desa untuk memberikan pemahaman kepada masyarakat tentang manfaat investasi tersebut",
+                    E: "Meminta perusahaan untuk melakukan survei lingkungan terlebih dahulu sebelum mengajukan izin investasi"
+                },
+                kunci: "B",
+                pembahasan: "Sebagai pemimpin berintegritas, tindakan pertama adalah menolak uang kompensasi (karena berpotensi suap/gratifikasi) dan dengan tegas berdiri menyuarakan aspirasi murni masyarakat.",
+                jawabanTerpilih: null,
+                ragu: false
+            },
+            {
+                id: 3,
+                soal: "B.J. Habibie dikenal sebagai sosok yang cerdas, berdedikasi tinggi, dan berjiwa inovatif. Semasa hidupnya, beliau tidak hanya berperan besar dalam pengembangan teknologi di Indonesia, tetapi juga menunjukkan kepemimpinan yang bijaksana dan integritas yang kuat. Sifat yang dapat diteladani dari B.J.Habibie untuk diterapkan dalam pekerjaan di lingkungan pemerintahan adalah... (TWK CPNS 2024)",
+                opsi: {
+                    A: "Kedisiplinan dalam menyelesaikan setiap tugas tepat waktu dan sesuai aturan",
+                    B: "Semangat inovasi dan berpikir kreatif untuk mencari solusi terbaik",
+                    C: "Kecermatan dalam mengikuti semua prosedur agar tidak membuat kesalahan",
+                    D: "Kemampuan menjaga hubungan baik dengan semua rekan kerja demi keharmonisan tim",
+                    E: "Kecepatan dalam mengambil keputusan tanpa pertimbangan yang berlarut - larut"
+                },
+                kunci: "B",
+                pembahasan: "Karakter paling melekat dan menonjol pada diri B.J. Habibie yang menjadi warisan dunia adalah semangat inovasi dan cara berpikir visioner yang kreatif.",
+                jawabanTerpilih: null,
+                ragu: false
+            },
+            {
+                id: 4,
+                soal: "Seorang hakim tertangkap tangan menerima suap. Komisi Yudisial (KY) kemudian melakukan pemeriksaan kode etik dan perilaku hakim tersebut, lalu merekomendasikan kepada Mahkamah Agung untuk memberhentikan hakim tersebut. Tindakan KY ini memicu perdebatan di masyarakat. Sebagian berpendapat bahwa tindakan KY terlalu keras, sementara sebagian lagi menilai tindakan tersebut sudah tepat. Manakah pernyataan berikut yang paling tepat terkait tindakan KY tersebut? (TWK CPNS 2024)",
+                opsi: {
+                    A: "KY terlalu terburu-buru dalam mengambil keputusan tanpa memberikan kesempatan hakim tersebut untuk membela diri",
+                    B: "KY tidak memiliki wewenang untuk memberikan rekomendasi pemberhentian hakim kepada Mahkamah Agung",
+                    C: "Tindakan KY sudah sesuai dengan tugas dan fungsinya dalam menjaga integritas dan perilaku hakim",
+                    D: "Tindakan KY bisa merusak citra peradilan jika tidak disertai bukti yang",
+                    E: "KY seharusnya memberikan peringatan terlebih dahulu sebelum memberikan rekomendasi pemberhentian"
+                },
+                kunci: "C",
+                pembahasan: "Tugas konstitusional Komisi Yudisial berdasarkan UUD 1945 adalah mengusulkan pengangkatan hakim agung serta mempunyai wewenang lain dalam rangka menjaga dan menegakkan kehormatan, keluhuran martabat, serta perilaku hakim.",
+                jawabanTerpilih: null,
+                ragu: false
+            },
+            {
+                id: 5,
+                soal: "Komisi Yudisial (KY) memiliki tanggung jawab dalam menjaga profesionalisme dan kode etik hakim di Indonesia. Jika KY tidak mematuhi undang-undang yang mengatur profesionalisme hakim dan kode etiknya, maka KY tidak akan mampu... (TWK CPNS 2024)",
+                opsi: {
+                    A: "Menjaga integritas dan kepercayaan publik terhadap lembaga peradilan",
+                    B: "Melaksanakan tugasnya dalam memberikan sanksi pidana kepada hakim yang melanggar aturan",
+                    C: "Mengawasi proses peradilan secara keseluruhan di berbagai tingkatan",
+                    D: "Menjalankan fungsi legislasi dalam pembentukan aturan etika hakim",
+                    E: "Menjaga keharmonisan antara lembaga peradilan dan lembaga eksekutif"
+                },
+                kunci: "A",
+                pembahasan: "Tujuan utama pengawasan kode etik oleh KY adalah untuk memastikan peradilan berjalan bersih, demi menjaga marwah/integritas hukum serta memelihara kepercayaan publik.",
+                jawabanTerpilih: null,
+                ragu: false
+            },
+            {
+                id: 6,
+                soal: "Mohammad Hatta, sebagai mantan Wakil Presiden Indonesia, dikenal karena prinsip hidupnya yang sederhana dan tidak mengambil dana pensiun meskipun berhak. Sikap ini menunjukkan integritas dan keteladanan dalam kehidupan pribadi dan publik. Dalam kehidupan sehari-hari, sikap apa yang dapat kita teladani dari Mohammad Hatta? (TWK CPNS 2024)",
+                opsi: {
+                    A: "Mengelola keuangan pribadi dengan bijak dan tidak bergantung pada fasilitas yang diberikan",
+                    B: "Mengutamakan kepentingan bersama di atas kepentingan pribadi dalam setiap tindakan",
+                    C: "Menjalani hidup dengan kesederhanaan meskipun memiliki hak atas fasilitas tertentu",
+                    D: "Memberikan contoh kepada generasi muda tentang pentingnya tanggung jawab moral",
+                    E: "Meningkatkan efisiensi penggunaan sumber daya yang dimiliki untuk keberlanjutan hidup"
+                },
+                kunci: "C",
+                pembahasan: "Konteks narasi menyoroti penolakan Bung Hatta atas hak dana pensiun demi kesederhanaan, mencerminkan keteladanan hidup bersahaja walaupun secara posisi sah memilikinya.",
+                jawabanTerpilih: null,
+                ragu: false
+            },
+            {
+                id: 7,
+                soal: "Mohammad Hatta dikenal karena menolak fasilitas mewah yang ditawarkan kepadanya saat menjabat sebagai Wakil Presiden, dan memilih untuk hidup sederhana. Apa yang dapat kita pelajari dari sikap Moh. Hatta ini dalam konteks integritas kepemimpinan?",
+                opsi: {
+                    A: "Menunjukkan bahwa menolak fasilitas mewah mencerminkan sikap jujur dan tidak menyalahgunakan wewenang.",
+                    B: "Menunjukkan bahwa hidup sederhana dan tidak memanfaatkan fasilitas mewah mencerminkan sikap adil dan tanggung jawab.",
+                    C: "Menunjukkan bahwa kesederhanaan dan kejujuran adalah bagian penting dari integritas seorang pemimpin.",
+                    D: "Menunjukkan bahwa kesederhanaan dalam menjalani kehidupan sebagai pejabat mencerminkan rasa empati dan keadilan sosial.",
+                    E: "Menunjukkan bahwa kesederhanaan dalam memimpin mencerminkan disiplin dalam menjalankan tugas."
+                },
+                kunci: "C",
+                pembahasan: "Kesederhanaan serta penolakan atas kemewahan jabatan membuktikan keteguhan moral internal (kejujuran nilai) yang merupakan fondasi inti integritas.",
+                jawabanTerpilih: null,
+                ragu: false
+            },
+            {
+                id: 8,
+                soal: "Dalam situasi darurat di mana keputusan cepat harus diambil, bagaimana integritas seorang pemimpin berperan dalam menjaga kepercayaan publik dan stabilitas pemerintahan?",
+                opsi: {
+                    A: "Dengan menunjukkan keberanian dalam mengambil risiko demi kepentingan pribadi.",
+                    B: "Dengan memastikan transparansi dalam setiap keputusan yang diambil meskipun menghadapi tekanan.",
+                    C: "Dengan bekerja sama secara eksklusif dengan pihak luar negeri tanpa mempertimbangkan masukan dari rakyat.",
+                    D: "With memprioritaskan kepentingan kelompok tertentu untuk mendapatkan dukungan lebih kuat.",
+                    E: "Dengan menjaga hubungan baik dengan semua pihak demi keuntungan pribadi."
+                },
+                kunci: "B",
+                pembahasan: "Transparansi di masa krusial atau darurat menepis kecurigaan publik, menjaga akuntabilitas, serta menjamin stabilitas dukungan terhadap pemerintah.",
+                jawabanTerpilih: null,
+                ragu: false
+            },
+            {
+                id: 9,
+                soal: "Sultan Hamengkubuwono pernah tertilang karena melanggar peraturan lalu lintas, namun ia tetap membayar denda dan meminta maaf secara terbuka. Bagaimana tindakan Sultan Hamengkubuwono ini mencerminkan integritasnya sebagai seorang pemimpin?",
+                opsi: {
+                    A: "Dengan membayar denda dan meminta maaf, menunjukkan sikap bertanggung jawab dan jujur.",
+                    B: "Dengan membayar denda dan meminta maaf, menunjukkan sikap adil terhadap hukum tanpa memanfaatkan kekuasaan.",
+                    C: "Dengan membayar denda dan meminta maaf, menunjukkan kemandirian dalam menghadapi konsekuensi tindakannya.",
+                    D: "Dengan membayar denda dan meminta maaf, menunjukkan disiplin dalam mematuhi aturan meskipun sebagai pemimpin.",
+                    E: "Dengan membayar denda dan meminta maaf, menunjukkan kerja keras untuk mempertahankan kepercayaan publik."
+                },
+                kunci: "A",
+                pembahasan: "Kesediaan mengakui kekhilafan (jujur) dan menanggung sanksinya langsung memperlihatkan nilai tanggung jawab tinggi seorang kesatria/pemimpin.",
+                jawabanTerpilih: null,
+                ragu: false
+            },
+            {
+                id: 10,
+                soal: "Sofyan merupakan pemilik warung sate yang sering memutar musik dari musisi terkenal untuk memeriahkan suasana warung. Hal tersebut ia lakukan karena ingin memberikan suasana yang nyaman bagi para pelanggan karena diputarkan musik yang membuat mereka senang. Hal tersebut memberikan keuntungan bagi Sofyan dengan terus bertambahnya pengunjung warungnya, Sebagai seorang yang menghargai karya musisi, Sofyan selalu mengirimkan logsheet musik yang selalu ia putar untuk dikirim ke Lembaga Manajemen Kolektif Nasional (LMKN), Tindakan yang dilakukan oleh Sofyan merupakan bentuk. . .",
+                opsi: {
+                    A: "Sikap bijaksana dalam menghargai kreativitas dan karya orang lain",
+                    B: "Sikap saling membantu orang lain dalam menghargai kreativitas dan",
+                    C: "Sikap bertanggung jawab dan berkeadilan dalam menghargai kreativitas karyanya",
+                    D: "Sikap memanusiakan orang lain dengan baik dalam menghargai kreativitas dan karya orang lain",
+                    E: "Sikap patuh terhadap aturan yang ada sehingga dapat menghargai suatu dan karyanya karya orang lain"
+                },
+                kunci: "C",
+                pembahasan: "Membayar royalti atau melaporkan pemakaian karya hak cipta komersial mencerminkan keadilan ekonomi bagi pencipta serta tanggung jawab hukum pelaku usaha.",
+                jawabanTerpilih: null,
+                ragu: false
+            },
+            {
+                id: 11,
+                soal: "Seorang polisi menilang sebuah Mobil yang berkendara tidak memakai sabuk pengaman. Ternyata yang mengendarai mobil itu adalah salah satu keluarga polisi tersebut. Tindakan seorang polisi yang tak pandang bulu dalam menindak pelanggaran lalu lintas telah sesuai dengan nilai integritas... (TWK CPNS 2023)",
+                opsi: {
+                    A: "Jujur dalam berbuat",
+                    B: "Berani dalam mengambil keputusan",
+                    C: "Adil dalam bertindak",
+                    D: "Profesional dalam bekerja",
+                    E: "Peduli terhadap berbagai pelanggaran lalu lintas"
+                },
+                kunci: "C",
+                pembahasan: "Sikap tidak pandang bulu/objektif meskipun berhadapan dengan relasi kekeluargaan sendiri merupakan perwujudan utama dari nilai keadilan.",
+                jawabanTerpilih: null,
+                ragu: false
+            },
+            {
+                id: 12,
+                soal: "Seorang siswa bernama Siti selalu membuang sampah pada tempatnya dan sering mengajak teman-temannya untuk menjaga kebersihan lingkungan sekolah. Ia juga selalu mematuhi aturan-aturan yang berlaku di sekolah dan aktif dalam kegiatan kebersihan yang diadakan oleh sekolah. Berdasarkan narasi tersebut, upaya yang dilakukan Siti untuk mengembangkan rasa tanggung jawabnya adalah ..",
+                opsi: {
+                    A: "Membiasakan diri untuk mematuhi aturan-aturan sekolah",
+                    B: "Melakukan hal-hal yang memerlukan tanggung jawab secara terus- menerus",
+                    C: "Menanamkan nilai-nilai kebersihan dalam diri",
+                    D: "Mengajak teman-temannya untuk bertanggung jawab",
+                    E: "Melakukan evaluasi diri secara berkala"
+                },
+                kunci: "A",
+                pembahasan: "Siti secara konsisten dan taat melaksanakan instruksi tata tertib lingkungan sekolah, yang bermula dari pembiasaan patuh pada aturan.",
+                jawabanTerpilih: null,
+                ragu: false
+            },
+            {
+                id: 13,
+                soal: "Seorang karyawan bernama Budi memiliki etos kerja yang tinggi. la selalu bekerja dengan giat dan tekun, bahkan di luar jam kerja. Budi juga selalu berusaha untuk meningkatkan keterampilan dan kemampuannya. Berdasarkan narasi tersebut, sikap Budi menunjukkan bahwa Budi memiliki sikap …",
+                opsi: {
+                    A: "Disiplin dalam bekerja di tempat kerja",
+                    B: "Keuletan dalam menjalankan profesi pekerjaan",
+                    C: "Ketangguhan dalam melaksanakan tanggung jawab pekerjaan",
+                    D: "Kerja keras dalam menjalankan pekerjaan",
+                    E: "Etos kerja dalam melaksanakan profesi yang telah diambil"
+                },
+                kunci: "D",
+                pembahasan: "Bekerja secara giat, tekun, dan mengerahkan segenap daya (bahkan di luar jam normal) merupakan definisi operasional dari kerja keras.",
+                jawabanTerpilih: null,
+                ragu: false
+            },
+            {
+                id: 14,
+                soal: "Dua calon Kepala Desa Tempuran, Kecamatan Trimurjo, Kabupaten Lampung Tengah, duduk berdampingan saat hari pencoblosan Pemilihan Kepala Desa. Calon nomor urut 1 Febri duduk di sebelah kanan panggung. Sementara Janggar duduk di sebelah kiri panggung. Tak ada raut ketegangan di antara mereka berdua. Walaupun, dua pria yang sedang bersaing menjadi kepala desa itu masih satu keluarga. Sikap yang ditunjukan oleh kedua pasangan bakal calon kepala desa tersebut adalah bentuk sikap...",
+                opsi: {
+                    A: "Sikap tanggung jawab sebagai bakal calon masyarakat desa yang mewakili rakyatnya",
+                    B: "Sikap profesionalisme sebagai bakal calon kepala desa tanpa melihat latar belakang hubungan kekeluargaan",
+                    C: "Sikap konsisten yang ditunjukan kedua bakal calon kepala desa kepada masyarakat yang akan memilih",
+                    D: "Sikap komitmen sebagai calon kepala desa yang memperhatikan hak pemilih untuk menegakan demokrasi",
+                    E: "Sikap solidaritas dan keterbukaan diantara kedua calon bakal kepala desa untuk mengajak masyarakat berpartisipasi dalam pemilihan kepala desa"
+                },
+                kunci: "B",
+                pembahasan: "Mampu memisahkan ranah persaingan jabatan resmi (politik) dengan urusan hubungan emosional internal/keluarga adalah esensi dari bersikap profesional.",
+                jawabanTerpilih: null,
+                ragu: false
+            },
+            {
+                id: 15,
+                soal: "Muhammad Habiburokhim atau biasa di panggil bapak Habib adalah pengusaha Percetakan terkenal di kotanya. Seiring dengan ramainya program berbagi yang biasa dikenal dengan Jumat Berkah, Bapak habib tak ingin melewatkan kesempatan berharga untuk terus berbagi kasih dan rezeki. Mengingat besarnya kepercayaan yang selama ini masyarakat berikan kepada Bapak Habib, maka kontribusi yang seluas-luasnya pula akan tulus diberi oleh perusahaannya untuk masyarakat sekitar. Tindakan yang di lakukan oleh Bapak Habib merupakan...",
+                opsi: {
+                    A: "Rasa empati kepada masyarakat sekitar sehingga mampu meringankan beban penderitaan masyarakat",
+                    B: "Bentuk jiwa simpati untuk memberikan segala kebutuhan yang di butuhkan oleh warga sekitar perusahaan",
+                    C: "Bentuk kepedulian dan rasa tanggung jawab kepada masyarakat sekitar sebagai ungkapan rasa terima kasih dengan ketulusan",
+                    D: "Sebagai jiwa tanggung jawab kepada warga sekitar perusahaan untuk bisa merasakan kebahagian bersama",
+                    E: "Rasa patriotisme yang tulus kepada masyarakat sekitar meskipun dilakukan dengan se adanya dan semaunya"
+                },
+                kunci: "C",
+                pembahasan: "Kontribusi balik ke area lokal didasari kesadaran moral atas kepercayaan publik yang diterima, melambangkan kepedulian sosial tinggi.",
+                jawabanTerpilih: null,
+                ragu: false
+            },
+            {
+                id: 16,
+                soal: "Raden Mas Suwardi Suryaningrat atau sering dikenal dengan nama Ki Hajar Dewantara adalah seorang tokoh pelopor pendidikan bagi kaum pribumi Indonesia dari zaman penjajahan Belanda. Meski demikian ia dikenal hingga saat ini karena jasanya mendirikan Taman Siswa sebagai cikal bakal pendidikan di Indonesia, Nilai integritas Ki Hajar Dewantara dalam upaya pendirian Taman Siswa adalah…",
+                opsi: {
+                    A: "Berani mengambil keputusan membangun Pendidikan bagi pribumi meski dibawah tekanan pemerintah Belanda",
+                    B: "Memiliki rasa tanggung jawab terhadap Pendidikan di tanah air bagi masyarakat pribumi",
+                    C: "Memiliki rasa kepedulian terhadap Pendidikan bagi masyarakat pribumi",
+                    D: "Menunjukkan kerja keras dalam upaya membangun Pendidikan bagi",
+                    E: "Memiliki jiwa kemandirian dalam membangun Pendidikan bagi masyarakat pribumi"
+                },
+                kunci: "C",
+                pembahasan: "Ketergerakan beliau mendirikan sarana belajar dipicu rasa empati/kepedulian mendalam melihat ketertinggalan nasib kaum pribumi kala itu.",
+                jawabanTerpilih: null,
+                ragu: false
+            },
+            {
+                id: 17,
+                soal: "Agustus 1945 menjadi hari bersejarah bagi bangsa Indonesia. Bangsa Indonesia menyatakan kemerdekaan sehingga lepas dari belenggu penjajahan bangsa asing. Ir. Soekarno membacakan proklamasi kemerdekaan Indonesia meski di lokasi banyak tentara Jepang yang bersenjata lengkap. Sikap integritas yang ditunjukkan Soekarno adalah",
+                opsi: {
+                    A: "Menunjukkan kerja keras dan kedisiplinan dalam mencapai tujuan nasional.",
+                    B: "Menunjukkan keberanian luar biasa dalam menjalankan amanat rakyat,",
+                    C: "Mengutamakan kepentingan bangsa di atas kepentingan pribadi.",
+                    D: "Menegakkan prinsip keadilan dan empati dalam menghadapi situasi sulit.",
+                    E: "Menunjukkan tanggung jawab dan komitmen tinggi terhadap kemerdekaan."
+                },
+                kunci: "B",
+                pembahasan: "Menghadapi moncong senjata pasukan asing demi memproklamasikan kedaulatan bangsa menuntut kualitas kepribadian utama: Keberanian.",
+                jawabanTerpilih: null,
+                ragu: false
+            },
+            {
+                id: 18,
+                soal: "Sesaat setelah anda selesai melakukan dinas luar untuk bertemu salah satu pejabat, anda mendapati jarum penunjuk bahan bakar mobil dinas yang sedang anda gunakan berada diatas. Padahal anda tahu bahwa bensin mobil dinas tersebut tinggal sedikit. Ternyata pejabat yang baru saja anda datangilah yang memberi bensin, sehingga anda memutuskan untuk Kembali putar arah dan menemui lagi pejabat tersebut untuk menyedot Kembali bensin yang di masukkannya. Persis sejumlah yang dia masukkan. Bagi anda, uang jalan yang didapatkannya harus di pergunakan sesuai kebutuhan, sesuai peruntukannya. Pada kasus ini, nilai integritas yang dimiliki yaitu…",
+                opsi: {
+                    A: "Jujur dalam menjalankan dan menjunjung tinggi integritas dalam diri",
+                    B: "Disiplin dengan apa yang sudah di lakukan dengan berbagai resikonya",
+                    C: "Tanggung jawab atas apa yang telah di perbuat dan melaksanakan dengan sebaik-baiknya",
+                    D: "Sederhana dalam melakukan segala hal supaya tidak berlebihan dalam berkehidupan",
+                    E: "Berani atas segala hal yang telah di lakukan jika hal tersebut salah dan tidak sebagaimana mestinya"
+                },
+                kunci: "A",
+                pembahasan: "Menolak fasilitas tidak sah (bensin gratis dari eksternal) dan memegang teguh asas uang dinas murni mencerminkan kejujuran prinsipil mutlak.",
+                jawabanTerpilih: null,
+                ragu: false
+            },
+            {
+                id: 19,
+                soal: "Samsul adalah seorang kepala perusahaan di cabang kota Bogor. Beliau mengadakan pertemuan membahas tentang kerugian perusahaan akibat banjir dan strategi mutasi untuk meningkatkan kinerja perusahaan, Namun di dalam pertemuan tersebut terjadi perdebatan antara kepala pusat dengan Samsul karena Samsul tidak mau di mutasikan ke kota lain tanpa alasan yang pasti. Samsul bahkan sampai mengancam untuk membocorkan data perusahaan. Tindakan yang di tunjukan Samsul merupakan...",
+                opsi: {
+                    A: "Bentuk pelanggaran terhadap harkat dan martabat orang lain tanpa memperdulikan hak orang lain dalam berpendapat",
+                    B: "Sikap individu yang tidak pantas di contoh dalam berdemokrasi di tempat kerja",
+                    C: "Sikap yang lebih mementingkan diri sendiri untuk sebuah penilaian kebenaran tanpa memperdulikan perasaan orang lain",
+                    D: "Kurangnya integritas dalam diri seseorang sehingga tidak memiliki rasa tanggung jawab dan profesionalisme yang seutuhnya",
+                    E: "Tindakan semena-mena terhadap orang lain tanpa mau mendengarkan segala pendapat dari orang sekitarnya"
+                },
+                kunci: "D",
+                pembahasan: "Mengancam membocorkan rahasia data internal tempat bernaung akibat ketidakpuasan individu melanggar sumpah jabatan/profesionalitas kerja dan merusak integritas diri.",
+                jawabanTerpilih: null,
+                ragu: false
+            },
+            {
+                id: 20,
+                soal: "Sebuah negara sedang mengalami kegagalan dalam sistem pemerintahan yang disebabkan oleh korupsi, nepotisme, dan penyalahgunaan kekuasaan yang meluas. Masyarakat merasa kecewa dan kehilangan kepercayaan terhadap pemerintahannya. Setelah adanya pergantian kepemimpinan, pemerintah yang baru berkomitmen untuk memperbaiki situasi dan memulihkan kepercayaan masyarakat. Dalam konteks ini, bagaimana integritas dapat membantu memperbaiki kepercayaan masyarakat terhadap pemerintah?",
+                opsi: {
+                    A: "Integritas dapat membantu pemerintah menciptakan berbagai program sosial dan ekonomi yang bertujuan meningkatkan kesejahteraan masyarakat.",
+                    B: "Integritas dapat membantu pemerintah mengamankan dana negara dan memastikan penggunaannya yang tepat, menghilangkan praktik korupsi.",
+                    C: "Integritas dapat membantu pemerintah mendirikan lembaga anti-korupsi yang independen untuk menegakkan hukum dan memberantas praktik korupsi di negara tersebut.",
+                    D: "Integritas dapat membantu pemerintah membangun transparansi dan akuntabilitas dalam pengambilan keputusan serta pelaksanaan kebijakan publik."
+                },
+                kunci: "D",
+                pembahasan: "Integritas sistemik diwujudkan lewat tata kelola yang transparan dan akuntabel sehingga masyarakat bisa memantau dan percaya kembali.",
+                jawabanTerpilih: null,
+                ragu: false
+            },
+            {
+                id: 21,
+                soal: "Seorang mahasiswa yang memiliki nilai yang kurang memuaskan dalam ujian akhir semester memutuskan untuk mengambil tindakan ekstrem. Dia membuat salinan palsu dari jawaban ujian seorang teman yang mendapat nilai tinggi dan menggantinya dengan jawabannya sendiri dalam ujian ulang yang akan datang. Mahasiswa ini yakin bahwa ini adalah satu-satunya cara untuk meningkatkan nilai akhirnya. Bagaimana Anda menilai tindakan mahasiswa ini dari sudut pandang integritas?",
+                opsi: {
+                    A: "Tindakan mahasiswa tersebut mencerminkan integritas karena dia mencoba untuk memperbaiki kesalahannya.",
+                    B: "Tindakan mahasiswa tersebut tidak mencerminkan integritas karena dia melakukan penipuan.",
+                    C: "Tindakan mahasiswa tersebut bisa dianggap bermasalah, tetapi tergantung pada tujuannya,",
+                    D: "Tindakan mahasiswa tersebut adalah langkah yang bijaksana dalam mencapai tujuannya,",
+                    E: "Tindakan mahasiswa tersebut tidak perlu dinilai dari sudut pandang integritas,"
+                },
+                kunci: "B",
+                pembahasan: "Pemalsuan berkas atau manipulasi jawaban secara sadar adalah kecurangan fatal yang mencederai total nilai integritas akademik.",
+                jawabanTerpilih: null,
+                ragu: false
+            },
+            {
+                id: 22,
+                soal: "Seorang pejabat tinggi pemerintahan yang memiliki akses ke dana besar untuk Program kesejahteraan rakyat ditemukan telah menggunakan sebagian dari dana tersebut untuk kepentingan pribadinya sendiri. Pejabat ini telah lama dihormati dan dianggap sebagai teladan integritas dalam pemerintahan, Bagaimana masyarakat seharusnya merespons tindakan pejabat ini untuk menjaga integritas dan keberadaban bangsanya?",
+                opsi: {
+                    A: "Masyarakat seharusnya mengabaikan tindakan tersebut karena pejabat ini telah berkontribusi besar pada pembangunan negara.",
+                    B: "Masyarakat seharusnya memberikan kebijakan amnesti kepada pejabat tersebut untuk menghindari skandal.",
+                    C: "Masyarakat seharusnya menyuarakan ketidakpuasan mereka dan menuntut penegakan hukum yang adil.",
+                    D: "Masyarakat seharusnya mencari tahu apakah pejabat lain juga melakukan hal serupa sebelum mengambil tindakan.",
+                    E: "Masyarakat seharusnya memberikan penghargaan kepada pejabat tersebut karena berhasil mengalihkan dana untuk kepentingan pribadi dengan cerdik."
+                },
+                kunci: "C",
+                pembahasan: "Sikap kritis publik melalui tuntutan penegakan hukum adil tanpa pandang status berguna untuk merawat iklim kontrol sosial hukum.",
+                jawabanTerpilih: null,
+                ragu: false
+            },
+            {
+                id: 23,
+                soal: "Seorang pegawai negeri yang baru saja ditempatkan di departemen pengawasan keuangan negara menemukan bukti bahwa beberapa pejabat tinggi dalam departemen tersebut terlibat dalam praktik korupsi yang merugikan negara. Dia merasa terbebani oleh temuan ini karena dia baru di departemen tersebut dan khawatir akan dampaknya pada karier dan keselamatannya. Bagaimana seharusnya pegawai negeri ini bertindak sesuai dengan prinsip berintegritas dan kejujuran?",
+                opsi: {
+                    A: "Pegawai negeri tersebut seharusnya segera melaporkan praktik korupsi tersebut kepada atasan dan pihak berwenang tanpa memikirkan risikonya",
+                    B: "Pegawai negeri tersebut seharusnya mencoba mencari bukti yang lebih kuat sebelum melaporkan praktik korupsi tersebut.",
+                    C: "Pegawai negeri tersebut seharusnya berbicara dengan rekan kerjanya terlebih dahulu untuk mendapatkan saran.",
+                    D: "Pegawai negeri tersebut seharusnya menghindari melaporkan praktik korupsi tersebut dan mencari pekerjaan baru.",
+                    E: "Pegawai negeri tersebut seharusnya mengabaikan praktik korupsi tersebut karena tidak ingin mencampuri urusan atasannya."
+                },
+                kunci: "A",
+                pembahasan: "Melaporkan kecurangan anggaran negara ke pihak penegak hukum sesegera mungkin merupakan kewajiban etik utama aparatur demi menyelamatkan hak keuangan negara.",
+                jawabanTerpilih: null,
+                ragu: false
+            },
+            {
+                id: 24,
+                soal: "Tindakan korupsi merupakan tindakan yang sangat merugikan negara. Korupsi mengakibatkan melambatnya pertumbuhan ekonomi negara, menurunnya investasi, meningkatnya kemiskinan serta meningkatnya ketimpangan pendapatan. Korupsi juga dapat menurunkan tingkat kebahagiaan masyarakat di suatu negara, kasus korupsi masih marak terjadi. Upaya paling tepat yang dapat dilakukan sebagai masyarakat yang berintegritas untuk menghentikan kejahatan luar biasa tersebut adalah . . .",
+                opsi: {
+                    A: "Menjatuhkan sanksi yang berat bagi terdakwa kasus korupsi menjadi pelajaran bagi pejabat lainnya",
+                    B: "Menegakkan hukum setegak-tegaknya tanpa pandang bulu sehingga semua agar orang memiliki kedudukan yang sama di mata hukum",
+                    C: "Melakukan sosialisasi terkait tindak pidana korupsi dan dampaknya sehingga masyarakat menjadi paham",
+                    D: "Mengembangkan sikap sadar hukum dalam kehidupan dengan menerapkan prinsip dasar kejujuran",
+                    E: "Membuat peraturan perundang-undangan tanpa memberi celah untuk berkembangnya praktik korupsi"
+                },
+                kunci: "D",
+                pembahasan: "Sesuai konteks 'sebagai masyarakat', peran internal kultural terkecil yang bisa diupayakan langsung adalah melatih kesadaran patuh hukum bersendikan kejujuran harian.",
+                jawabanTerpilih: null,
+                ragu: false
+            },
+            {
+                id: 25,
+                soal: "Integritas sangat erat kaitannya dengan kejujuran karena jujur adalah kesamaan antara pikiran, hati, ucapan dan perbuatan, begitu juga dengan pengertian integritas. Karena kesamaan definisi tersebut, orang yang jujur bisa juga kita sebut sebagai orang yang berintegritas. Contoh tindakan yang mencerminkan perilaku integritas adalah ...",
+                opsi: {
+                    A: "Membuang sampah pada tempatnya walaupun hanya sampah kecil seperti permen",
+                    B: "Menepati janji dengan segala apa yang pernah diucapkan",
+                    C: "Mengerjakan ulangan sendiri sesulit apapun soalnya dan meskipun harus remedial",
+                    D: "Menyapu halaman ketika pagi hari untuk membantu meringankan pekerjaan rumah ibu",
+                    E: "Menaati jadwal piket dan mengambil tugas masing-masing ketika melakukannya"
+                },
+                kunci: "B",
+                pembahasan: "Penyelarasan komitmen ucapan (janji) dengan aktualisasi tindakan konkret di lapangan adalah definisi dasar dari nilai integritas diri.",
+                jawabanTerpilih: null,
+                ragu: false
+            }
+        ];
+
+        let indeksAktif = 0;
+        let sisaWaktu = 20 * 60; // 20 Menit dalam detik
+        let timerInterval;
+
+        function mulaiUjian(event) {
+            event.preventDefault();
+            const nama = document.getElementById('username').value.trim();
+            if (nama === "") return;
+
+            document.getElementById('login-page').classList.add('hidden');
+            document.getElementById('exam-page').classList.remove('hidden');
+            document.getElementById('display-nama').innerText = nama;
+
+            initTimer();
+            renderGridNomor();
+            tampilkanSoal(indeksAktif);
+        }
+
+        function initTimer() {
+            timerInterval = setInterval(() => {
+                let menit = Math.floor(sisaWaktu / 60);
+                let detik = sisaWaktu % 60;
+
+                menit = menit < 10 ? '0' + menit : menit;
+                detik = detik < 10 ? '0' + detik : detik;
+
+                document.getElementById('timer').innerText = `${menit}:${detik}`;
+
+                if (sisaWaktu <= 0) {
+                    clearInterval(timerInterval);
+                    alert("Waktu ujian telah habis!");
+                    akhiriUjian();
+                }
+                sisaWaktu--;
+            }, 1000);
+        }
+
+        function tampilkanSoal(indeks) {
+            indeksAktif = indeks;
+            const soalData = bankSoal[indeks];
+
+            document.getElementById('nomor-aktif').innerText = indeks + 1;
+            document.getElementById('teks-soal').innerText = soalData.soal;
+
+            const areaOpsi = document.getElementById('area-opsi');
+            areaOpsi.innerHTML = '';
+
+            for (const [kunci, teks] of Object.entries(soalData.opsi)) {
+                const isChecked = soalData.jawabanTerpilih === kunci;
+                
+                const divOpsi = document.createElement('div');
+                divOpsi.className = `flex items-start p-3 border rounded-lg cursor-pointer transition ${isChecked ? 'bg-blue-50 border-blue-400 font-medium' : 'hover:bg-gray-50 border-gray-200'}`;
+                divOpsi.onclick = () => pilihJawaban(kunci);
+
+                divOpsi.innerHTML = `
+                    <span class="w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-full border mr-3 text-xs font-bold ${isChecked ? 'bg-blue-500 text-white border-blue-500' : 'bg-gray-100 text-gray-600 border-gray-300'}">
+                        ${kunci}
+                    </span>
+                    <span class="text-gray-700 text-sm md:text-base -mt-0.5">${teks}</span>
+                `;
+                areaOpsi.appendChild(divOpsi);
+            }
+
+            document.getElementById('btn-prev').disabled = (indeks === 0);
+            
+            const btnNext = document.getElementById('btn-next');
+            if (indeks === bankSoal.length - 1) {
+                btnNext.innerHTML = 'Selesai &checkmark;';
+                btnNext.className = "px-5 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded shadow transition text-sm sm:text-base";
+                btnNext.onclick = klikSelesai;
+            } else {
+                btnNext.innerHTML = 'Soal Berikutnya &rarr;';
+                btnNext.className = "px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded shadow transition text-sm sm:text-base";
+                btnNext.onclick = soalBerikutnya;
+            }
+
+            const btnRagu = document.getElementById('btn-ragu');
+            if (soalData.ragu) {
+                btnRagu.className = "px-5 py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded shadow-inner border border-yellow-600 text-sm sm:text-base";
+            } else {
+                btnRagu.className = "px-5 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold rounded shadow transition text-sm sm:text-base";
+            }
+
+            renderGridNomor();
+        }
+
+        function pilihJawaban(kunciOpsi) {
+            bankSoal[indeksAktif].jawabanTerpilih = kunciOpsi;
+            tampilkanSoal(indeksAktif);
+        }
+
+        function tandaiRagu() {
+            bankSoal[indeksAktif].ragu = !bankSoal[indeksAktif].ragu;
+            tampilkanSoal(indeksAktif);
+        }
+
+        function soalSebelumnya() {
+            if (indeksAktif > 0) tampilkanSoal(indeksAktif - 1);
+        }
+
+        function soalBerikutnya() {
+            if (indeksAktif < bankSoal.length - 1) tampilkanSoal(indeksAktif + 1);
+        }
+
+        function klikSelesai() {
+            let terjawab = bankSoal.filter(s => s.jawabanTerpilih !== null).length;
+            let raguCount = bankSoal.filter(s => s.ragu).length;
+            
+            let alertMsg = `Apakah Anda yakin ingin mengakhiri ujian?\n\nJumlah Terjawab: ${terjawab} dari ${bankSoal.length} soal.`;
+            if (raguCount > 0) {
+                alertMsg += `\nPERINGATAN: Masih ada ${raguCount} nomor ditandai Ragu-ragu!`;
+            }
+
+            if (confirm(alertMsg)) {
+                akhiriUjian();
+            }
+        }
+
+        function akhiriUjian() {
+            clearInterval(timerInterval);
+            document.getElementById('timer').innerText = "SELESAI";
+
+            // Sembunyikan Area Kuis Utama
+            document.getElementById('cbt-content').classList.add('hidden');
+            
+            // Hitung Statistik Nilai
+            let benar = 0;
+            let salah = 0;
+            let kosong = 0;
+
+            bankSoal.forEach(s => {
+                if (s.jawabanTerpilih === null) {
+                    kosong++;
+                } else if (s.jawabanTerpilled === s.kunci || s.jawabanTerpilih === s.kunci) {
+                    benar++;
+                } else {
+                    salah++;
+                }
+            });
+
+            // Konversi ke skala nilai 100
+            let nilaiSkala = Math.round((benar / bankSoal.length) * 100);
+
+            // Tampilkan Panel Hasil
+            document.getElementById('skor-akhir').innerText = nilaiSkala;
+            document.getElementById('stat-benar').innerText = benar;
+            document.getElementById('stat-salah').innerText = salah;
+            document.getElementById('stat-kosong').innerText = kosong;
+            document.getElementById('result-page').classList.remove('hidden');
+
+            // Render Lembar Pembahasan Lengkap
+            renderLembarPembahasan();
+        }
+
+        function renderLembarPembahasan() {
+            const container = document.getElementById('lembar-pembahasan');
+            container.innerHTML = '';
+
+            bankSoal.forEach((s, idx) => {
+                const divPembahasan = document.createElement('div');
+                divPembahasan.className = "p-4 border border-gray-200 rounded-lg bg-gray-50 space-y-3";
+
+                // Deteksi kebenaran status
+                let statusBadge = "";
+                if (s.jawabanTerpilih === null) {
+                    statusBadge = `<span class="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-1 rounded">Tidak Diisi</span>`;
+                } else if (s.jawabanTerpilih === s.kunci) {
+                    statusBadge = `<span class="bg-green-100 text-green-800 text-xs font-bold px-2.5 py-1 rounded">&checkmark; Benar</span>`;
+                } else {
+                    statusBadge = `<span class="bg-red-100 text-red-800 text-xs font-bold px-2.5 py-1 rounded">&times; Salah</span>`;
+                }
+
+                divPembahasan.innerHTML = `
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <h4 class="font-bold text-gray-800 text-base">Soal Nomor ${idx + 1}</h4>
+                        ${statusBadge}
+                    </div>
+                    <p class="text-gray-700 font-medium whitespace-pre-line text-sm md:text-base">${s.soal}</p>
+                    <div class="text-sm space-y-1 bg-white p-3 rounded border">
+                        <p class="text-gray-600"><span class="font-semibold text-gray-800">Jawaban Anda:</span> ${s.jawabanTerpilih ? s.jawabanTerpilih + '. ' + s.opsi[s.jawabanTerpilih] : '<span class="text-gray-400 italic">Kosong</span>'}</p>
+                        <p class="text-green-700 font-semibold"><span class="font-semibold text-gray-800">Kunci Jawaban:</span> ${s.kunci}. ${s.opsi[s.kunci]}</p>
+                    </div>
+                    <div class="bg-blue-50 border-l-4 border-blue-400 p-3 text-sm">
+                        <strong class="text-blue-800 block mb-1">Pembahasan:</strong>
+                        <p class="text-gray-700">${s.pembahasan}</p>
+                    </div>
+                `;
+                container.appendChild(divPembahasan);
+            });
+        }
+
+        function renderGridNomor() {
+            const gridNomor = document.getElementById('grid-nomor');
+            gridNomor.innerHTML = '';
+
+            bankSoal.forEach((soal, indeks) => {
+                const kotak = document.createElement('button');
+                kotak.className = `w-10 h-10 flex items-center justify-center font-bold text-sm rounded border transition-all duration-150`;
+                
+                if (soal.ragu) {
+                    kotak.classList.add('bg-yellow-400', 'text-gray-900', 'border-yellow-500');
+                } else if (soal.jawabanTerpilih !== null) {
+                    kotak.classList.add('bg-green-500', 'text-white', 'border-green-600');
+                } else {
+                    kotak.classList.add('bg-gray-100', 'text-gray-700', 'border-gray-300');
+                }
+
+                if (indeks === indeksAktif) {
+                    kotak.classList.add('ring-4', 'ring-blue-400', 'scale-105', 'z-10');
+                }
+
+                kotak.innerText = indeks + 1;
+                kotak.onclick = () => tampilkanSoal(indeks);
+                
+                gridNomor.appendChild(kotak);
+            });
+        }
+    </script>
+</body>
+</html>
